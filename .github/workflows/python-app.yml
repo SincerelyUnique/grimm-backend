@@ -42,7 +42,7 @@ jobs:
         KEY: ${{ secrets.SSHKEY }}
         PORT: ${{ secrets.PORT }}
         script: |
-          cd /usr/local/app
+          cd /usr/local/app/grimm-backend
           git pull git@github.com:SincerelyUnique/grimm-backend.git
           pip install -r requirements.txt
           ./run_grimm &
