@@ -47,7 +47,7 @@ jobs:
           git pull git@github.com:SincerelyUnique/grimm-backend.git
           source ../venv/bin/activate
           pip install -r requirements.txt
-          pid=$(cat /opt/provision/logs/grimm.pid)
+          pid=$(cat /usr/local/app/grimm-backend/logs/grimm.pid)
           echo "$pid"
           kill -9 $pid
           ./run_grimm.sh &
