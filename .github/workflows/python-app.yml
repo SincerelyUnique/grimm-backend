@@ -45,7 +45,7 @@ jobs:
           cd /usr/local/app/grimm-backend
           echo 'source code'
           git pull git@github.com:SincerelyUnique/grimm-backend.git
-          source ./venv/bin/activate
+          source ../venv/bin/activate
           pip install -r requirements.txt
           pid=$(cat /opt/provision/logs/provision.pid)
           echo "$pid"
