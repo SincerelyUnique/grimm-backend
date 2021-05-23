@@ -50,4 +50,4 @@ jobs:
           pid=$(cat /opt/provision/logs/grimm.pid)
           echo "$pid"
           kill -9 $pid
-          ./run_grimm &
+          ./run_grimm.sh &
