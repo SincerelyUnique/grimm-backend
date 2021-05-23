@@ -40,6 +40,7 @@ jobs:
         host: ${{ secrets.HOST }}
         USERNAME: ${{ secrets.USERNAME }}
         KEY: ${{ secrets.SSHKEY }}
+        PORT: ${{ secrets.PORT }}
         script: |
           cd /usr/local/app
           git pull git@github.com:SincerelyUnique/grimm-backend.git
