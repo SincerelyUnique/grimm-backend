@@ -475,7 +475,7 @@ def sms_code():
             )
             return jsonify({"status": "failure", "message": result})
         smsverify.drop_token(phone_number)  # drop token from pool if validated
-        # try11 update database first, if no successful, append this openid.
+        # try update database first, if no successful, append this openid.
         try:
             if db.expr_update("user", {"phone_verified": 1}, openid=openid) is False:
                 SMS_VERIFIED_OPENID[openid] = phone_number
