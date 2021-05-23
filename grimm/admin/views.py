@@ -39,7 +39,7 @@ def admin_login():
 
 @admin.route('/admins', methods=['GET'])
 def admins_():
-    """view function to display all admins profile."""
+    """view function to display all admins profile"""
     admins_info = Admin.query.all()
     queries = []
     logger.info("query all admin info successfully")
