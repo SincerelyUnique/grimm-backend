@@ -5,6 +5,12 @@ from grimm.main import main
 from grimm.utils import constants
 
 
+@main.route("/", methods=['GET'])
+def main_app():
+    """view function to get all tags info 111"""
+    return 'Welcome to Grimm!'
+
+
 @main.route("/tags", methods=['GET'])
 def tags_db():
     """view function to get all tags info 111"""

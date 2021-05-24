@@ -7,7 +7,7 @@ from grimm import logger, db
 from grimm.activity import activity, activitybiz
 from grimm.models.activity import Activity, RegisteredActivity, ActivityParticipant
 from grimm.models.admin import User
-from grimm.utils import dbutils
+from grimm.utils import dbutils, certificationgenerate, emailverify
 from grimm.utils.constants import TAG_LIST
 
 
@@ -154,6 +154,108 @@ def activity_registration(activity_id):
         logger.info('%s rows updated.' % num_rows_updated)
         db.session.commit()
         return jsonify({"status": "success"})
+
+
+@activity.route("/activityParticipant", methods=["GET", 'POST'])
+def activity_participant():
+    if request.method == 'GET':
+        participant_openid = request.args.get("participant_openid")
+        activity_participant_infos = ActivityParticipant.query.all()
+        logger.info("query all activity_participant info successfully")
+        feedback = {"status": "success", "participant_openid": participant_openid, "activities": []}
+        for activity_participant in activity_participant_infos:
+            if activity_participant["participant_openid"] == participant_openid:
+                activity_id = int(activity_participant["activity_id"])
+                activity_info = Activity.query.filter(Activity.id == activity_id).first()
+                activity = {"id": activity_info["id"], "title": activity_info["title"],
+                            "location": activity_info["location"]}
+                start = activity_info["start_time"]
+                end = activity_info["end_time"]
+                activity["start_time"] = start.strftime("%Y-%m-%dT%H:%M:%S")
+                activity["end_time"] = end.strftime("%Y-%m-%dT%H:%M:%S")
+                activity["content"] = activity_info["content"]
+                activity["certificated"] = activity_participant["certificated"]
+                feedback["activities"].append(activity)
+                # email_verify.send("email_resource/confirm-user.html",
+                # "jftt_pt@hotmail.com", "test", "test", "12345678")
+        return jsonify(feedback)
+    if request.method == 'POST':
+        info = request.get_json()
+        participant_openid = info.get("participant_openid", None)
+        activity_id = info.get("activity_id", None)
+        real_name = info.get("real_name", None)
+        id_type = info.get("id_type", None)
+        idcard = info.get("idcard", None)
+        email = info.get("email", None)
+        paper_certificate = info.get("paper_certificate", None)
+        activity_info = Activity.query.filter(Activity.id == activity_id).first()
+        activity_title = activity_info.get("title", None)
+        start = activity_info["start_time"]
+        end = activity_info["end_time"]
+        activity_duration = (end - start).days * 24 + (end - start).seconds // 3600
+        feedback = {"status": "success",
+                    "participant_openid": participant_openid,
+                    "activity_id": activity_id,
+                    "activity_title": activity_title,
+                    "real_name": real_name,
+                    "id_type": id_type,
+                    "idcard": idcard,
+                    "email": email,
+                    "paper_certificate": paper_certificate}
+        ActivityParticipant.query.\
+            filter(ActivityParticipant.participant_openid == participant_openid,
+                   ActivityParticipant.activity_id == activity_id).\
+            update({ActivityParticipant.certificated: 0})
+        activity_participant_info = db.session.query(ActivityParticipant).\
+            filter(ActivityParticipant.activity_id == activity_id,
+                   ActivityParticipant.participant_openid == participant_openid).first()
+        logger.info(activity_participant_info)
+
+        certificated_user_info = db.session.query.filter(User.openid == participant_openid).first()
+        certificated_user_info.real_name = real_name
+        certificated_user_info.id_type = id_type
+        certificated_user_info.idcard = idcard
+        certificated_user_info.email = email
+
+        certificated_info = {"paper_certificate": paper_certificate}
+        if paper_certificate:
+            recipient_name = info.get("recipient_name", None)
+            recipient_address = info.get("recipient_address", None)
+            recipient_phone = info.get("recipient_phone", None)
+            certificated_user_info.recipient_name = recipient_name
+            certificated_user_info.recipient_address = recipient_address
+            certificated_user_info.recipient_phone = recipient_phone
+            feedback["recipient_name"] = recipient_name
+            feedback["recipient_address"] = recipient_address
+            feedback["recipient_phone"] = recipient_phone
+        if not activity_participant_info.certificated:
+            certificated_info["certificated"] = 1
+            certificated_info["certificate_date"] = datetime.now().strftime("%Y-%m-%d")
+            activity_participant_info.paper_certificate = paper_certificate
+            activity_participant_info.certificated = 1
+            activity_participant_info.certificate_date = 1
+
+            # update participant's related user info in user table
+            logger.info(dbutils.serialize(certificated_user_info))
+            db.session.commit()
+
+            certification_info = {"name": real_name,
+                                  "certificate_type": id_type,
+                                  "certificate_code": idcard,
+                                  "activity_title": activity_title,
+                                  "activity_during": str(activity_duration) + "小时",
+                                  "director": "王臻",
+                                  "manager": "刘莉娟",
+                                  "contact_code": "1388888888"}
+
+            certification_file = certificationgenerate.generate_certification(certification_info)
+
+            emailverify.send("email_resource/certificate-letter.html",
+                              email, real_name + "'s certification",
+                              "test", "12345678",
+                              attachment_file=certification_file)
+
+        return jsonify(feedback)
 
 
 @activity.route("/myActivities", methods=["GET"])

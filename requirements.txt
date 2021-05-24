@@ -11,7 +11,8 @@ aliyun_python_sdk_core>=2.13.30
 dnspython>=2.1.0
 pycryptodome>=3.9.9
 bcrypt>=0.4
-
+reportlab==3.5.67
+PyPDF2==1.26.0
 
 sqlalchemy>=1.2.6
 Flask-SQLAlchemy>=2.4.1
