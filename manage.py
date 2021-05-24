@@ -1,11 +1,12 @@
 import os
 
+from flask import send_from_directory
 from flask_script import Manager
 
 from grimm import create_app, logger
 
 basedir = os.path.abspath(os.path.dirname(__file__))
-app = create_app(os.path.join(basedir, "config.py"))
+app = create_app()
 manager = Manager(app)
 
 
@@ -22,6 +23,11 @@ def internal_server_error(e):
 @app.errorhandler(503)
 def server_unavailable(e):
     logger.error('Server 503.')
+
+
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(os.path.join(app.root_path, 'static'), 'favicon.ico', mimetype='image/vnd.microsoft.icon')
 
 
 if __name__ == '__main__':

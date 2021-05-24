@@ -6,7 +6,7 @@ class Admin(db.Model):
     __tablename__ = 'ADMIN'
     id = db.Column(db.Integer, primary_key=True, nullable=False)
     registration_date = db.Column(db.DateTime, default=func.now(), nullable=False)
-    password = db.Column(db.String, default=0, nullable=False)
+    password = db.Column(db.String(60), default=0, nullable=False)
     name = db.Column(db.String(100))
     email = db.Column(db.String(32), unique=True)
     email_verified = db.Column(db.Integer)

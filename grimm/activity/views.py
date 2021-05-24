@@ -456,7 +456,7 @@ def registered_activities():
         else:
             try:
                 userinfo = User.query.filter(User.openid == openid).first()
-                registerAct.address = userinfo["address"]
+                registerAct.address = userinfo.address
             except:
                 return jsonify({"status": "failure", "message": "未能获取用户信息"})
         registerAct.user_openid = openid

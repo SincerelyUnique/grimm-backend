@@ -3,6 +3,7 @@ import os
 
 from flask import Flask
 from flask_compress import Compress
+from flask_migrate import Migrate
 from flask_socketio import SocketIO
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
@@ -20,13 +21,15 @@ engine = create_engine(GrimmConfig.SQLALCHEMY_DATABASE_URI)
 TOP_DIR = os.path.dirname(__file__) or "."
 socketio = SocketIO(cors_allowed_origins='*', debug=True)
 api = Api()
+migrate = Migrate()
 
 
-def create_app(config_file):
+def create_app():
     app = Flask(__name__)
     app.config.from_object(GrimmConfig)
     compress.init_app(app)
     db.init_app(app)
+    migrate.init_app(app, db)
     CORS(app)
     app.url_map.redirect_defaults = False
     socketio.init_app(app)
