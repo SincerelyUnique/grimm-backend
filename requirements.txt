@@ -23,4 +23,3 @@ requests
 pandas==0.25.3
 six>=1.15.0
 flask_compress==1.4.0
-mysql-connector==2.2.9
