@@ -1,4 +1,3 @@
-from flask import Blueprint
+from flask_restx import Namespace
 
-wxapp = Blueprint('wxapp', __name__)
-from . import views
+wxapp = Namespace('WXAPP', 'Wei Xin API.', path='/')

@@ -51,3 +51,4 @@ jobs:
           echo "$pid"
           kill -9 $pid
           ./run_grimm.sh &
+          echo -e '\003'

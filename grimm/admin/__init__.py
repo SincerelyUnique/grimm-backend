@@ -1,4 +1,3 @@
-from flask import Blueprint
+from flask_restx import Namespace
 
-admin = Blueprint('admin', __name__)
-from . import views
+admin = Namespace('Admin', 'Admin API and User API.', path='/')

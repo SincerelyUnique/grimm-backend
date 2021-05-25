@@ -1,4 +1,3 @@
-from flask import Blueprint
+from flask_restx import Namespace
 
-activity = Blueprint('activity', __name__)
-from . import views
+activity = Namespace('Activity', 'Activity API.', path='/')

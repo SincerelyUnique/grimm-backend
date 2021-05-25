@@ -5,6 +5,7 @@ from datetime import datetime
 import bcrypt
 import urllib3
 from flask import request, jsonify
+from flask_restx import Resource
 
 from grimm import logger, db, engine, GrimmConfig, socketio
 from grimm.admin import admin, adminbiz
@@ -13,49 +14,51 @@ from grimm.utils import constants, smsverify, emailverify, dbutils, decrypt
 
 
 @admin.route('/login', methods=['POST'])
-def admin_login():
-    info = json.loads(request.get_data())
-    feedback = {"status": "success"}
-    admin_info = Admin.query.filter(Admin.email == info["email"]).first()
-    if not admin_info:
-        feedback["message"] = "未注册邮箱"
-        logger.warning("%s: no such admin account", info["email"])
-    input_password = info["password"]
-    if not bcrypt.checkpw(input_password.encode('utf-8'), admin_info.password):
-        feedback["message"] = "密码错误"
-        logger.warning("%d, %s: admin login failed, wrong password", admin_info.id, admin_info.name)
-    if admin_info.email_verified:
-        feedback["id"] = admin_info.id
-        feedback["email"] = admin_info.email
-        feedback["type"] = ("root" if admin_info.id == 0 else "normal")
-        logger.info("%d, %s: admin login successfully", admin_info.id, admin_info.name)
-    else:
-        feedback["message"] = "请先认证邮箱"
-        logger.warning("%d, %s: admin login failed, email not verified", admin_info.id, admin_info.name)
-    if "message" in feedback:
-        feedback["status"] = "failure"
-    return jsonify(feedback)
+class AdminLogin(Resource):
+    def post(self):
+        info = json.loads(request.get_data())
+        feedback = {"status": "success"}
+        admin_info = Admin.query.filter(Admin.email == info["email"]).first()
+        if not admin_info:
+            feedback["message"] = "未注册邮箱"
+            logger.warning("%s: no such admin account", info["email"])
+        input_password = info["password"]
+        if not bcrypt.checkpw(input_password.encode('utf-8'), admin_info.password):
+            feedback["message"] = "密码错误"
+            logger.warning("%d, %s: admin login failed, wrong password", admin_info.id, admin_info.name)
+        if admin_info.email_verified:
+            feedback["id"] = admin_info.id
+            feedback["email"] = admin_info.email
+            feedback["type"] = ("root" if admin_info.id == 0 else "normal")
+            logger.info("%d, %s: admin login successfully", admin_info.id, admin_info.name)
+        else:
+            feedback["message"] = "请先认证邮箱"
+            logger.warning("%d, %s: admin login failed, email not verified", admin_info.id, admin_info.name)
+        if "message" in feedback:
+            feedback["status"] = "failure"
+        return jsonify(feedback)
 
 
 @admin.route('/admins', methods=['GET'])
-def admins_():
-    """view function to display all admins profile"""
-    admins_info = Admin.query.all()
-    queries = []
-    logger.info("query all admin info successfully")
-    for admin_info in admins_info:
-        query = {"id": admin_info.id,
-                 "email": admin_info.email,
-                 "type": "root" if admin_info.id == 0 else "normal",
-                 "name": admin_info.name,
-                 "email_verified": admin_info.email_verified}
-        queries.append(query)
-    return jsonify(queries)
+class GetAdmins(Resource):
+    def get(self):
+        """view function to display all admins profile"""
+        admins_info = Admin.query.all()
+        queries = []
+        logger.info("query all admin info successfully")
+        for admin_info in admins_info:
+            query = {"id": admin_info.id,
+                     "email": admin_info.email,
+                     "type": "root" if admin_info.id == 0 else "normal",
+                     "name": admin_info.name,
+                     "email_verified": admin_info.email_verified}
+            queries.append(query)
+        return jsonify(queries)
 
 
 @admin.route("/admin/<int:admin_id>", methods=['GET', 'DELETE'])
-def manage_admin(admin_id):
-    if request.method == 'GET':
+class ManageAdmin(Resource):
+    def get(self, admin_id):
         feedback = {"status": "success"}
         admin_info = Admin.query.filter(Admin.id == admin_id).first()
         if not admin_info:
@@ -66,7 +69,8 @@ def manage_admin(admin_id):
         feedback["type"] = "root" if admin_info.id == 0 else "normal"
         logger.info("%d, %s: query admin info successfully", admin_info.id, admin_info.name)
         return jsonify(feedback)
-    if request.method == 'DELETE':
+
+    def delete(self, admin_id):
         if admin_id != 0:
             admin_info = db.session.query(Admin).filter(Admin.id == admin_id).first()
             db.session.delete(admin_info)
@@ -78,72 +82,73 @@ def manage_admin(admin_id):
     
     
 @admin.route("/admin", methods=['POST'])
-def new_admin():
-    """view function to create new admin"""
-    info = json.loads(request.get_data())
-    exist_admin = Admin.query.filter(Admin.email == info["email"]).first()
-    if exist_admin:
-        logger.warning("%s: create new admin with duplicated email account", info["email"])
-        return jsonify({"status": "failure", "message": "已注册邮箱"})
+class NewAdmin(Resource):
+    def post(self):
+        """view function to create new admin"""
+        info = json.loads(request.get_data())
+        exist_admin = Admin.query.filter(Admin.email == info["email"]).first()
+        if exist_admin:
+            logger.warning("%s: create new admin with duplicated email account", info["email"])
+            return jsonify({"status": "failure", "message": "已注册邮箱"})
 
-    # add new row if current admin is new
-    sql = "select max(id) max_admin_id from admin"
-    max_admin_id = pd.read_sql_query(sql, engine)['max_admin_id'].iloc[0]
-    admin_info = Admin()
-    admin_info.id = max_admin_id + 1  # new admin id
-    admin_info.registration_date = datetime.now().strftime("%Y-%m-%d")
-    admin_info.email = info["email"]
-    admin_info.name = (f"管理员{max_admin_id + 1}" if "name" not in info or info["name"] is None else info["name"])
+        # add new row if current admin is new
+        sql = "select max(id) max_admin_id from admin"
+        max_admin_id = pd.read_sql_query(sql, engine)['max_admin_id'].iloc[0]
+        admin_info = Admin()
+        admin_info.id = max_admin_id + 1  # new admin id
+        admin_info.registration_date = datetime.now().strftime("%Y-%m-%d")
+        admin_info.email = info["email"]
+        admin_info.name = (f"管理员{max_admin_id + 1}" if "name" not in info or info["name"] is None else info["name"])
 
-    # update pass code
-    if not adminbiz.check_password_policy(info["password"]):
-        logger.warning("%d, %s: not strong policy password", admin_info.id, admin_info.name)
-        return jsonify({"status": "failure", "message": "密码不合规范"})
-    salt = bcrypt.gensalt(constants.DEFAULT_PASSWORD_SALT)
-    bcrypt_password = bcrypt.hashpw(info["password"].encode('utf-8'), salt)
-    admin_info.password = bcrypt_password
-    db.session.add(admin_info)
-    db.session.commit()
+        # update pass code
+        if not adminbiz.check_password_policy(info["password"]):
+            logger.warning("%d, %s: not strong policy password", admin_info.id, admin_info.name)
+            return jsonify({"status": "failure", "message": "密码不合规范"})
+        salt = bcrypt.gensalt(constants.DEFAULT_PASSWORD_SALT)
+        bcrypt_password = bcrypt.hashpw(info["password"].encode('utf-8'), salt)
+        admin_info.password = bcrypt_password
+        db.session.add(admin_info)
+        db.session.commit()
 
-    # send confirm email
-    try:
-        emailverify.drop_token(admin_info.email)
-        email_token = emailverify.EmailVerifyToken(admin_info.email, expiry=constants.EMAIL_VRF_EXPIRY)  # 2hrs expiry
-        if not email_token.send_email():
+        # send confirm email
+        try:
+            emailverify.drop_token(admin_info.email)
+            email_token = emailverify.EmailVerifyToken(admin_info.email, expiry=constants.EMAIL_VRF_EXPIRY)  # 2hrs expiry
+            if not email_token.send_email():
+                logger.warning(
+                    "%d, %s: send confirm email failed",
+                    admin_info["id"],
+                    admin_info["email"],
+                )
+                return jsonify(
+                    {"status": "failure", "message": "发送验证邮箱失败"}
+                )
+        except Exception as err:
             logger.warning(
                 "%d, %s: send confirm email failed",
                 admin_info["id"],
                 admin_info["email"],
             )
             return jsonify(
-                {"status": "failure", "message": "发送验证邮箱失败"}
+                {"status": "failure", "message": f"{err.args}"}
             )
-    except Exception as err:
-        logger.warning(
-            "%d, %s: send confirm email failed",
+        logger.info(
+            "%d, %s: send confirm email successfully",
             admin_info["id"],
             admin_info["email"],
         )
-        return jsonify(
-            {"status": "failure", "message": f"{err.args}"}
+        emailverify.append_token(email_token)
+        logger.info(
+            "%d, %s: create new admin procedure completed successfully",
+            admin_info["id"],
+            admin_info["name"],
         )
-    logger.info(
-        "%d, %s: send confirm email successfully",
-        admin_info["id"],
-        admin_info["email"],
-    )
-    emailverify.append_token(email_token)
-    logger.info(
-        "%d, %s: create new admin procedure completed successfully",
-        admin_info["id"],
-        admin_info["name"],
-    )
-    return jsonify({"status": "success"})
+        return jsonify({"status": "success"})
 
 
 @admin.route('/users', methods=['GET', 'PATCH', 'POST'])
-def users():
-    if request.method == 'GET':
+class Users(Resource):
+    def get(self):
         user_type = request.args.get("role")
         role = 0 if user_type == 'volunteer' else 1 if user_type == 'disabled' else None
         users_info = User.query.filter(User.role == role).all() if role in [1, 0] else User.query.all()
@@ -183,7 +188,8 @@ def users():
             display_users.append(info)
         logger.info("query all user info with role type successfully")
         return jsonify(display_users)
-    if request.method == 'PATCH':
+
+    def patch(self):
         audit_info = json.loads(request.get_data())
         for audit in audit_info:
             openid = audit["openid"]
@@ -223,52 +229,54 @@ def users():
 
 
 @admin.route('/admin/<int:admin_id>/update-password', methods=['POST'])
-def admin_update_password(admin_id):
-    admin_password = json.loads(request.get_data())
-    old_pass, new_pass = admin_password["old_password"], admin_password["new_password"]
-    admin_info = db.session.query(Admin).filter(Admin.id == admin_id).first()
-    if not admin_info:
-        logger.warning("%d: admin not exist.", admin_id)
-        return jsonify({"status": "failure", "message": "账户不存在"})
-    if not bcrypt.checkpw(old_pass.encode('utf-8'), admin_info.password):
-        logger.warning("%d: wrong old password", admin_id)
-        return jsonify({"status": "failure", "message": "密码错误"})
-    if not adminbiz.check_password_policy(new_pass):
-        logger.warning("%d: not strong policy password", admin_id)
-        return jsonify({"status": "failure", "message": "密码不合规范"})
-    salt = bcrypt.gensalt(constants.DEFAULT_PASSWORD_SALT)
-    bcrypt_password = bcrypt.hashpw(new_pass.encode('utf-8'), salt)
-    admin_info.password = bcrypt_password
-    db.session.commit()
-    logger.info("%d: update password successfully", admin_id)
-    return jsonify({"status": "success"})
+class AdminUpdatePassword(Resource):
+    def post(self, admin_id):
+        admin_password = json.loads(request.get_data())
+        old_pass, new_pass = admin_password["old_password"], admin_password["new_password"]
+        admin_info = db.session.query(Admin).filter(Admin.id == admin_id).first()
+        if not admin_info:
+            logger.warning("%d: admin not exist.", admin_id)
+            return jsonify({"status": "failure", "message": "账户不存在"})
+        if not bcrypt.checkpw(old_pass.encode('utf-8'), admin_info.password):
+            logger.warning("%d: wrong old password", admin_id)
+            return jsonify({"status": "failure", "message": "密码错误"})
+        if not adminbiz.check_password_policy(new_pass):
+            logger.warning("%d: not strong policy password", admin_id)
+            return jsonify({"status": "failure", "message": "密码不合规范"})
+        salt = bcrypt.gensalt(constants.DEFAULT_PASSWORD_SALT)
+        bcrypt_password = bcrypt.hashpw(new_pass.encode('utf-8'), salt)
+        admin_info.password = bcrypt_password
+        db.session.commit()
+        logger.info("%d: update password successfully", admin_id)
+        return jsonify({"status": "success"})
 
 
 @admin.route("/admin/forget-password", methods=['GET'])
-def admin_reset_password():
-    address = request.args.get("email")
-    admin_info = db.session.query(Admin).filter(Admin.email == address).first()
-    if not admin_info:
-        logger.warning("%s, no such admin account", address)
-        return jsonify({"status": "failure", "message": "未注册邮箱"})
+class AdminResetPassword(Resource):
+    def get(self):
+        address = request.args.get("email")
+        admin_info = db.session.query(Admin).filter(Admin.email == address).first()
+        if not admin_info:
+            logger.warning("%s, no such admin account", address)
+            return jsonify({"status": "failure", "message": "未注册邮箱"})
 
-    response, new_pass = emailverify.send_reset(receiver=address)
-    if response:
-        logger.warning("%s: send reset email failed", address)
-        return jsonify({"status": "failure", "message": f"{response}"})
-    logger.info("%s, send reset email successfully", address)
+        response, new_pass = emailverify.send_reset(receiver=address)
+        if response:
+            logger.warning("%s: send reset email failed", address)
+            return jsonify({"status": "failure", "message": f"{response}"})
+        logger.info("%s, send reset email successfully", address)
 
-    salt = bcrypt.gensalt(constants.DEFAULT_PASSWORD_SALT)
-    bcrypt_password = bcrypt.hashpw(new_pass.encode('utf-8'), salt)
-    admin_info.password = bcrypt_password
-    db.session.commit()
-    logger.info("%s, update password successfully", address)
-    return jsonify({"status": "success"})
+        salt = bcrypt.gensalt(constants.DEFAULT_PASSWORD_SALT)
+        bcrypt_password = bcrypt.hashpw(new_pass.encode('utf-8'), salt)
+        admin_info.password = bcrypt_password
+        db.session.commit()
+        logger.info("%s, update password successfully", address)
+        return jsonify({"status": "success"})
 
 
 @admin.route("/profile", methods=["GET", 'POST'])
-def profile_():
-    if request.method == 'GET':
+class ProfileOperate(Resource):
+    def get(self):
         openid = request.headers.get("Authorization")
         user_info = User.query.filter(User.openid == openid).first()
         if not user_info:
@@ -298,7 +306,8 @@ def profile_():
         }
         logger.info("%s: user login successfully", user_info["openid"])
         return jsonify(feedback)
-    if request.method == 'POST':
+
+    def post(self):
         # update profile
         new_info = json.loads(request.get_data())  # get request POST user data
         openid = request.headers.get("Authorization")
@@ -328,109 +337,111 @@ def profile_():
 
 
 @admin.route("/getPhoneNumber", methods=['POST'])
-def get_phone_number():
-    """get weixin user phoneNumber"""
-    info = request.get_json()  # get http POST data bytes format
-    print(info)
-    js_code = info["js_code"]
-    encrypted_data = info["encryptedData"]
-    iv = info["iv"]
-    if js_code is None:
-        return jsonify({"status": "failure"})
-    prefix = "https://api.weixin.qq.com/sns/jscode2session?appid="
-    suffix = "&grant_type=authorization_code"
-    url = prefix + GrimmConfig.wxappid + "&secret=" + GrimmConfig.wxsecret + "&js_code=" + js_code + suffix
-    logger.info("user login, wxapp authorization: %s", url)
-    retry = 3
-    while retry > 0:
-        http = urllib3.PoolManager()
-        response = http.request("GET", url)
-        feedback = json.loads(response.data)
-        # authorization success
-        if response.status == 200 and "openid" in feedback:
-            break
-        retry -= 1
+class GetPhoneNumber(Resource):
+    def post(self):
+        """get weixin user phoneNumber"""
+        info = request.get_json()  # get http POST data bytes format
+        print(info)
+        js_code = info["js_code"]
+        encrypted_data = info["encryptedData"]
+        iv = info["iv"]
+        if js_code is None:
+            return jsonify({"status": "failure"})
+        prefix = "https://api.weixin.qq.com/sns/jscode2session?appid="
+        suffix = "&grant_type=authorization_code"
+        url = prefix + GrimmConfig.wxappid + "&secret=" + GrimmConfig.wxsecret + "&js_code=" + js_code + suffix
+        logger.info("user login, wxapp authorization: %s", url)
+        retry = 3
+        while retry > 0:
+            http = urllib3.PoolManager()
+            response = http.request("GET", url)
+            feedback = json.loads(response.data)
+            # authorization success
+            if response.status == 200 and "openid" in feedback:
+                break
+            retry -= 1
 
-    if retry != 0:
-        feedback["server_errcode"] = 0
-        if "session_key" in feedback:
-            sessionKey = feedback["session_key"]
+        if retry != 0:
+            feedback["server_errcode"] = 0
+            if "session_key" in feedback:
+                sessionKey = feedback["session_key"]
 
-            phone_decrypt = decrypt.PhoneNumberDecrypt(GrimmConfig.wxappid, sessionKey)
-            decryptData = phone_decrypt.decrypt(encrypted_data, iv)
-            print(decryptData)
-            feedback["decrypt_data"] = decryptData
-            del feedback["session_key"]
-            feedback["status"] = "success"
-        else:
-            logger.error("wxapp authorization failed")
-            feedback["status"] = "failure"
-    return jsonify(feedback)
+                phone_decrypt = decrypt.PhoneNumberDecrypt(GrimmConfig.wxappid, sessionKey)
+                decryptData = phone_decrypt.decrypt(encrypted_data, iv)
+                print(decryptData)
+                feedback["decrypt_data"] = decryptData
+                del feedback["session_key"]
+                feedback["status"] = "success"
+            else:
+                logger.error("wxapp authorization failed")
+                feedback["status"] = "failure"
+        return jsonify(feedback)
 
 
 @admin.route("/register", methods=['POST'])
-def register_():
-    """view function for registering new user to database"""
-    global SMS_VERIFIED_OPENID
-    info = request.get_json()  # get http POST data bytes format
-    # fetch data from front end
+class RegisterInfo(Resource):
+    def post(self):
+        """view function for registering new user to database"""
+        global SMS_VERIFIED_OPENID
+        info = request.get_json()  # get http POST data bytes format
+        # fetch data from front end
 
-    openid = request.headers.get("Authorization")
-    user_info = User.query.filter(User.openid == openid).first()
-    if user_info:
-        logger.error("%s: user is registered already", openid)
-        return jsonify({"status": "failure", "message": "用户已注册，请登录"})
+        openid = request.headers.get("Authorization")
+        user_info = User.query.filter(User.openid == openid).first()
+        if user_info:
+            logger.error("%s: user is registered already", openid)
+            return jsonify({"status": "failure", "message": "用户已注册，请登录"})
 
-    if not user_info:
-        user_info = User()
-    user_info.openid = request.headers.get("Authorization")
-    if info['role'] == 'volunteer':
-        user_info.role = 0
-    elif info['role'] == 'impaired':
-        user_info.role = 1
-    else:
-        user_info.role = 2
+        if not user_info:
+            user_info = User()
+        user_info.openid = request.headers.get("Authorization")
+        if info['role'] == 'volunteer':
+            user_info.role = 0
+        elif info['role'] == 'impaired':
+            user_info.role = 1
+        else:
+            user_info.role = 2
 
-    if user_info.role == 1:
-        user_info.disabled_id = info['disabledID']
-        user_info.disabled_id_verified = 0
+        if user_info.role == 1:
+            user_info.disabled_id = info['disabledID']
+            user_info.disabled_id_verified = 0
 
-    user_info.birth = info["birthdate"] if "birthdate" in info.keys() else datetime.now().strftime("%Y-%m-%d")
-    # user_info['remark'] = info['comment']
-    user_info.gender = info["gender"]
-    # user_info['idcard'] = info['idcard']
-    user_info.address = info["linkaddress"]
-    # user_info['contact'] = info['linktel']
-    user_info.name = info["name"]
-    if 'idcard' in info:
-        user_info.idcard = info['idcard']
-        user_info.idcard_verified = 0
-    user_info.audit_status = 0
-    user_info.registration_date = datetime.now().strftime("%Y-%m-%d")
-    user_info.phone = info["phone"]
-    user_info.phone_verified = 1
-    user_info.email = info["email"]
-    user_info.email_verified = 0
-    adminbiz.set_openid_if_user_info_exists(openid, user_info.idcard, user_info.phone, user_info.email,
-                                            user_info.disabled_id if user_info.role == 1 else None)
+        user_info.birth = info["birthdate"] if "birthdate" in info.keys() else datetime.now().strftime("%Y-%m-%d")
+        # user_info['remark'] = info['comment']
+        user_info.gender = info["gender"]
+        # user_info['idcard'] = info['idcard']
+        user_info.address = info["linkaddress"]
+        # user_info['contact'] = info['linktel']
+        user_info.name = info["name"]
+        if 'idcard' in info:
+            user_info.idcard = info['idcard']
+            user_info.idcard_verified = 0
+        user_info.audit_status = 0
+        user_info.registration_date = datetime.now().strftime("%Y-%m-%d")
+        user_info.phone = info["phone"]
+        user_info.phone_verified = 1
+        user_info.email = info["email"]
+        user_info.email_verified = 0
+        adminbiz.set_openid_if_user_info_exists(openid, user_info.idcard, user_info.phone, user_info.email,
+                                                user_info.disabled_id if user_info.role == 1 else None)
 
-    exist_info = User.query.filter(User.openid == openid).first()
-    if not exist_info:
-        db.session.add(user_info)
+        exist_info = User.query.filter(User.openid == openid).first()
+        if not exist_info:
+            db.session.add(user_info)
+            db.session.commit()
+        else:
+            user_info.audit_status = 1
+
+        socketio.emit("new-users", [user_info])
+        user_info.push_status = 1
         db.session.commit()
-    else:
-        user_info.audit_status = 1
-
-    socketio.emit("new-users", [user_info])
-    user_info.push_status = 1
-    db.session.commit()
-    logger.info("%s: complete user registration success", openid)
-    return jsonify({"status": "success"})
+        logger.info("%s: complete user registration success", openid)
+        return jsonify({"status": "success"})
 
 
 @admin.route("/smscode", methods=['GET', 'POST'])
-def sms_code():
-    if request.method == 'GET':
+class SMSCode(Resource):
+    def get(self):
         phone_number = request.args.get("phone")
         if phone_number is None:
             logger.warning("invalid url parameter phone_number")
@@ -456,7 +467,8 @@ def sms_code():
             "%s, %s: send sms to number successfully", phone_number, sms_token.vrfcode
         )
         return jsonify({"status": "success"})
-    if request.method == 'POST':
+
+    def post(self):
         global SMS_VERIFIED_OPENID
         data = request.get_json()
         phone_number = data["phone"]

@@ -1,4 +1,3 @@
-from flask import Blueprint
+from flask_restx import Namespace
 
-main = Blueprint('main', __name__)
-from . import views
+main = Namespace('Main', 'Main(Common) API.', path='/')
