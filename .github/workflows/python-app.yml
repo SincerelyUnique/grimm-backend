@@ -36,10 +36,11 @@ jobs:
 #        pytest
     - name: CD
       uses: appleboy/ssh-action@master
-      with:
+      with:   # below ref: https://github.com/marketplace/actions/ssh-remote-commands
         host: ${{ secrets.HOST }}
         USERNAME: ${{ secrets.USERNAME }}
         KEY: ${{ secrets.SSHKEY }}
+        command_timeout: 5m
         PORT: ${{ secrets.PORT }}
         script: |
           cd /usr/local/app/grimm-backend
@@ -51,3 +52,4 @@ jobs:
           echo "$pid"
           kill -9 $pid
           nohup ./run_grimm.sh &
+          echo -e '\003'
