@@ -24,16 +24,15 @@ import ssl
 import dns.resolver
 import email
 import time
-import json
 from datetime import datetime
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.image import MIMEImage
 from email.mime.application import MIMEApplication
-from flask import abort, redirect, url_for
+from flask import abort
 
 import grimm.utils.vrfcode as vrfcode
-from grimm import logger, db
+from grimm import logger, db, GrimmConfig
 from grimm.exceptions.exceptions import UserEmailError
 from grimm.models.admin import Admin
 from grimm.utils.misctools import get_pardir
@@ -46,31 +45,29 @@ smtp_port = None
 passcode = None
 
 if passcode is None:
-    with open(get_pardir(get_pardir(os.path.abspath(__file__))) + '/config/email.config', mode='r', encoding='utf8') as fp:
-        email_config = json.load(fp=fp)
-        sender = email_config['address']
-        smtp_domain = email_config['server']
-        smtp_port = email_config['port']
-        passcode = email_config['passcode']
+    sender = GrimmConfig.SMTP_ADDRESS
+    smtp_domain = GrimmConfig.SMTP_SERVER
+    smtp_port = GrimmConfig.SMTP_PORT
+    passcode = GrimmConfig.SMTP_PASSWORD
 
 SMTP_CONNECTION = None
 EMAIL_TOKEN_POOL = {}
 
 
 def append_token(token):
-    '''append token to be verified in token queue'''
+    """append token to be verified in token queue"""
     global EMAIL_TOKEN_POOL
     if token.addr not in EMAIL_TOKEN_POOL:
         EMAIL_TOKEN_POOL[token.addr] = token
 
 
 def fetch_token(addr):
-    '''fetch token with user email address'''
+    """fetch token with user email address"""
     return None if addr not in EMAIL_TOKEN_POOL else EMAIL_TOKEN_POOL[addr]
 
 
 def drop_token(addr):
-    '''drop token that has been verified in token queue'''
+    """drop token that has been verified in token queue"""
     global EMAIL_TOKEN_POOL
     token = fetch_token(addr)
     if token is not None and \
@@ -79,7 +76,7 @@ def drop_token(addr):
 
 
 def check_email_addr(addr, verify_exists=False):
-    '''verify if a email address exists with server domain'''
+    """verify if a email address exists with server domain"""
     if re.match(REGEX, addr.lower()) is None:
         err = UserEmailError('invalid email address')
         logger.error(err.emsg)
@@ -104,7 +101,7 @@ def check_email_addr(addr, verify_exists=False):
 
 
 def smtp_connection_status():
-    '''get global smtp connection status, True is connected, otherwise False'''
+    """get global smtp connection status, True is connected, otherwise False"""
     if SMTP_CONNECTION is not None:
         try:
             status = SMTP_CONNECTION.noop()[0]
@@ -118,7 +115,7 @@ def smtp_connection_status():
 
 
 def send(email_sample, receiver, subject, plain, replacement, attachment_file=None):
-    '''send verification email to new user'''
+    """send verification email to new user"""
     global SMTP_CONNECTION
     path = get_pardir(os.path.abspath(__file__))
     # check global smtp connection status and reconnect if necessary
@@ -185,7 +182,7 @@ def send(email_sample, receiver, subject, plain, replacement, attachment_file=No
 
 
 def send_confirm(receiver, vrfurl, email_sample='email_resource/confirm-admin.html'):
-    '''send confirm email to admin user'''
+    """send confirm email to admin user"""
     subject = 'Grimm Verify New Email Address'
     plain = """\
     您好，欢迎注册使用视障人士志愿者平台，请点击下方链接完成邮箱认证:
@@ -203,7 +200,7 @@ def send_confirm(receiver, vrfurl, email_sample='email_resource/confirm-admin.ht
 
 
 def send_reset(receiver, email_sample='email_resource/reset-admin.html'):
-    '''send reset email to admin user'''
+    """send reset email to admin user"""
     subject = 'Grimm Reset User Password'
     plain = """\
     请使用新密码登录账户:
@@ -218,9 +215,9 @@ def send_reset(receiver, email_sample='email_resource/reset-admin.html'):
 
 
 class EmailVerifyToken(object):
-    '''email verification token class'''
+    """email verification token class"""
     def __init__(self, addr, expiry=3600):
-        '''initialize email verification token objects'''
+        """initialize email verification token objects"""
         if isinstance(addr, str) and isinstance(expiry, int):
             # validate receiver email format
             if check_email_addr(addr):
@@ -240,57 +237,57 @@ class EmailVerifyToken(object):
 
     @property
     def vrfurl(self):
-        '''get email token verification url'''
+        """get email token verification url"""
         return self.__vrfurl
 
     @property
     def addr(self):
-        '''get email verification token receiver address'''
+        """get email verification token receiver address"""
         return self.__addr
 
     @property
     def duration(self):
-        '''get email verification token instant duration'''
+        """get email verification token instant duration"""
         if self.__send_time is not None:
             return time.time() - self.__send_time.timestamp()
         return 0.0
 
     @property
     def expiry(self):
-        '''get email verification token expiry seconds const'''
+        """get email verification token expiry seconds const"""
         return self.__expiry
 
     @expiry.setter
     def expiry(self, new_expiry):
-        '''set new expiry time seconds'''
+        """set new expiry time seconds"""
         if not isinstance(new_expiry, int) and new_expiry > self.expiry:
             self.__expiry = new_expiry
 
     @property
     def expired(self):
-        '''get email verification token expiration status, True if expired else False'''
+        """get email verification token expiration status, True if expired else False"""
         if self.__send_time is not None:
             return True if self.duration > self.expiry else False
         return False
 
     @property
     def valid(self):
-        '''get email verification token validation status, True if valid else False'''
+        """get email verification token validation status, True if valid else False"""
         return self.__valid
 
     @valid.setter
     def valid(self, value):
-        '''set token valid status when validating token'''
+        """set token valid status when validating token"""
         if isinstance(value, bool):
             self.__valid == value
 
     @property
     def email_sample(self):
-        '''get email sample file name in relative path format'''
+        """get email sample file name in relative path format"""
         return self.__email_sample
 
     def send_email(self):
-        '''send verification email to receiver'''
+        """send verification email to receiver"""
         if self.valid and not self.expired:
             response = send_confirm(email_sample=self.email_sample,
                                     receiver=self.addr,
@@ -309,7 +306,7 @@ class EmailVerifyToken(object):
         return False
 
 #    def resend(self, force=True):
-#        '''refresh verification email and resend'''
+#        """refresh verification email and resend"""
 #        if self.valid:
 #            if force or self.expired:
 #                self.__vrfurl = vrfcode.new_vrfurl(self.addr)
@@ -320,7 +317,7 @@ class EmailVerifyToken(object):
 #        raise RuntimeError('invalid or expired token')
 #
 #    def validate(self, token):
-#        '''confirm email verification'''
+#        """confirm email verification"""
 #        if isinstance(token, bytes):
 #            token = token.decode('utf8')
 #        if not isinstance(token, str):
@@ -340,7 +337,7 @@ class EmailVerifyToken(object):
 
 
 def validate_email(token):
-    '''validate confirm email verification'''
+    """validate confirm email verification"""
     if isinstance(token, bytes):
         token = token.decode('utf8')
     if not isinstance(token, str):

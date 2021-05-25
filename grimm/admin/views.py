@@ -349,7 +349,7 @@ class GetPhoneNumber(Resource):
             return jsonify({"status": "failure"})
         prefix = "https://api.weixin.qq.com/sns/jscode2session?appid="
         suffix = "&grant_type=authorization_code"
-        url = prefix + GrimmConfig.wxappid + "&secret=" + GrimmConfig.wxsecret + "&js_code=" + js_code + suffix
+        url = prefix + GrimmConfig.WXAppID + "&secret=" + GrimmConfig.WXAppSecret + "&js_code=" + js_code + suffix
         logger.info("user login, wxapp authorization: %s", url)
         retry = 3
         while retry > 0:
@@ -366,7 +366,7 @@ class GetPhoneNumber(Resource):
             if "session_key" in feedback:
                 sessionKey = feedback["session_key"]
 
-                phone_decrypt = decrypt.PhoneNumberDecrypt(GrimmConfig.wxappid, sessionKey)
+                phone_decrypt = decrypt.PhoneNumberDecrypt(GrimmConfig.WXAppID, sessionKey)
                 decryptData = phone_decrypt.decrypt(encrypted_data, iv)
                 print(decryptData)
                 feedback["decrypt_data"] = decryptData
