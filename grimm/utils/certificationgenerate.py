@@ -5,10 +5,10 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfbase import pdfmetrics
-from grimm.utils.misctools import get_pardir
 
-path = get_pardir(os.path.abspath(__file__))
-pdfmetrics.registerFont(TTFont('SimHei', os.path.join(path, '../config/SimHei.ttf')))
+from config import BASE_DIR
+
+pdfmetrics.registerFont(TTFont('SimHei', os.path.join(BASE_DIR, 'static/SimHei.ttf')))
 
 
 def generate_certification(certification_info):
@@ -39,7 +39,7 @@ def generate_certification(certification_info):
     packet.seek(0)
     new_pdf = PdfFileReader(packet)
     # read your existing PDF
-    certification_template = os.path.join(path, "certification_empty.pdf")
+    certification_template = os.path.join(BASE_DIR, "static/certificationempty.pdf")
     existing_pdf = PdfFileReader(open(certification_template, "rb"))
     output = PdfFileWriter()
     # add the "watermark" (which is the new pdf) on the existing page
@@ -48,7 +48,7 @@ def generate_certification(certification_info):
     output.addPage(page)
     # finally, write "output" to a real file
     certification_file = certification_info.get("name", None) + "_certification.pdf"
-    certification_files_path = os.path.join(path, "certification_files/" + certification_file)
+    certification_files_path = os.path.join(BASE_DIR, "static/certificationfiles/" + certification_file)
     outputStream = open(certification_files_path, "wb")
     output.write(outputStream)
     outputStream.close()

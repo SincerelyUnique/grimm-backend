@@ -3,6 +3,7 @@ import os
 from flask import send_from_directory
 from flask_script import Manager
 
+from config import BASE_DIR
 from grimm import create_app, logger
 
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -27,7 +28,7 @@ def server_unavailable(e):
 
 @app.route('/favicon.ico')
 def favicon():
-    return send_from_directory(os.path.join(app.root_path, 'static'), 'favicon.ico', mimetype='image/vnd.microsoft.icon')
+    return send_from_directory(BASE_DIR, 'static/favicon.ico', mimetype='image/vnd.microsoft.icon')
 
 
 if __name__ == '__main__':
