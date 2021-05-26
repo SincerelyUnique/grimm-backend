@@ -51,5 +51,4 @@ jobs:
           pid=$(cat /usr/local/app/grimm-backend/logs/grimm.pid)
           echo "$pid"
           kill -9 $pid
-          nohup ./run_grimm.sh &
-          echo -e '\003'
+          nohup ./run_grimm.sh >> grimm.out 2>&1 &
