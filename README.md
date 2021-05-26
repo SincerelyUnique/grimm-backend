@@ -39,3 +39,20 @@ Detailed changes for each release are documented in the [release notes](https://
 [MIT](https://github.com/SincerelyUnique/grimm-backend/blob/main/license)
 
 Copyright (c) 2017-present Grimm
+
+## Features Usage
+
+### 1.flask_migrate
+
+```bash
+$ set FLASK_APP=manage.py
+$ flask db init  # Just execute it at the first time
+$ flask db migrate -m "Initial migration."
+$ flask db upgrade
+```
+
+reference doc:
+
+[Flask-Migrate](https://flask-migrate.readthedocs.io/en/latest/)
+
+[Alembic autogenerate documentation](http://alembic.zzzcomputing.com/en/latest/autogenerate.html#what-does-autogenerate-detect-and-what-does-it-not-detect)
