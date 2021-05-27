@@ -2,10 +2,10 @@ from datetime import datetime
 
 import bcrypt
 from flask import jsonify, request
-from flask_restx import Resource, fields
+from flask_restx import Resource
 from sqlalchemy import inspect
 
-from grimm import logger, db, engine, api
+from grimm import logger, db, engine
 from grimm.main import main
 from grimm.models.admin import Admin
 from grimm.utils import constants

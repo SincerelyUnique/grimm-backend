@@ -42,7 +42,7 @@ Copyright (c) 2017-present Grimm
 
 ## Features Usage
 
-### flask_migrate
+### - flask_migrate
 
 ```bash
 $ set FLASK_APP=manage.py
@@ -57,6 +57,32 @@ reference doc:
 
 [Alembic autogenerate documentation](http://alembic.zzzcomputing.com/en/latest/autogenerate.html#what-does-autogenerate-detect-and-what-does-it-not-detect)
 
-Issues or Attentions:
+Attentions: the migration script needs to be reviewed and edited.
 
-1.After creating a migration, either manually or as --autogenerate, you must apply it with alembic upgrade head. If you used db.create_all() from a shell, you can use alembic stamp head to indicate that the current state of the database represents the application of all migrations.
+### - flask_restx
+
+Use flask_restx to test your interface, just like postman, for example, we can write router like below and test.
+
+```python
+# For GET interface, usage like @main.route("/addAdmin")
+@main.doc(params={"email": "input email", 'password': 'input password'})
+def get(self):
+    pass
+
+# For POST interface, usage like @admin.route('/login', methods=['POST'])
+@admin.doc(
+    "Admin login test",
+    responses={
+        200: ("Logged in", AdminDto.login_success),
+        400: "Validations failed.",
+        403: "Incorrect password or incomplete credentials.",
+        404: "Email does not match any account.",
+        10086: "Email not verified."
+    }
+)
+@admin.expect(AdminDto.login, validate=True)
+def post(self):
+    pass
+```
+
+There are many other methods that can be used in project, for more info, please visit to [Flask-RESTX](https://flask-restx.readthedocs.io/en/latest/) or [Github](https://github.com/python-restx/flask-restx)

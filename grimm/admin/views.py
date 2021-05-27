@@ -9,12 +9,24 @@ from flask_restx import Resource
 
 from grimm import logger, db, engine, GrimmConfig, socketio
 from grimm.admin import admin, adminbiz
+from grimm.admin.admindto import AdminDto
 from grimm.models.admin import Admin, User
 from grimm.utils import constants, smsverify, emailverify, dbutils, decrypt
 
 
 @admin.route('/login', methods=['POST'])
 class AdminLogin(Resource):
+    @admin.doc(
+        "Admin login test",
+        responses={
+            200: ("Logged in", AdminDto.login_success),
+            400: "Validations failed.",
+            403: "Incorrect password or incomplete credentials.",
+            404: "Email does not match any account.",
+            10086: "Email not verified."
+        }
+    )
+    @admin.expect(AdminDto.login, validate=True)
     def post(self):
         info = json.loads(request.get_data())
         feedback = {"status": "success"}
@@ -23,23 +35,23 @@ class AdminLogin(Resource):
             feedback["message"] = "未注册邮箱"
             logger.warning("%s: no such admin account", info["email"])
             feedback["status"] = "failure"
-            return jsonify(feedback)
+            return feedback, 404
         input_password = info["password"]
         if not bcrypt.checkpw(input_password.encode('utf-8'), admin_info.password):
             feedback["message"] = "密码错误"
             feedback["status"] = "failure"
             logger.warning("%d, %s: admin login failed, wrong password", admin_info.id, admin_info.name)
-            return jsonify(feedback)
+            return feedback, 403
         if not admin_info.email_verified:
             feedback["message"] = "请先认证邮箱"
             feedback["status"] = "failure"
             logger.warning("%d, %s: admin login failed, email not verified", admin_info.id, admin_info.name)
-            return jsonify(feedback)
+            return feedback, 10086
         feedback["id"] = admin_info.id
         feedback["email"] = admin_info.email
         feedback["type"] = ("root" if admin_info.id == 0 else "normal")
         logger.info("%d, %s: admin login successfully", admin_info.id, admin_info.name)
-        return jsonify(feedback)
+        return feedback
 
 
 @admin.route('/admins', methods=['GET'])

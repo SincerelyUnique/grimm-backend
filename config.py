@@ -13,7 +13,7 @@ class Config(object):
     WXAppSecret = '9e25fb830e30b2a36959e795a9db628a'
 
 
-class DevConfig(Config):
+class DevelopmentConfig(Config):
     SQLALCHEMY_DATABASE_URI = "mysql://root:root@localhost:3306/grimmdb"
     # SQLALCHEMY_DATABASE_URI = "mysql+cymysql://root:root@localhost:3306/grimmdb"
     # SQLALCHEMY_DATABASE_URI = "mysql+mysqlconnector://root:root@localhost:3306/grimmdb"
@@ -25,7 +25,7 @@ class DevConfig(Config):
     SMTP_PASSWORD = ''
 
 
-class TestConfig(Config):
+class TestingConfig(Config):
     SQLALCHEMY_DATABASE_URI = "mysql://root:root@localhost:3306/grimmdb"
     SMS_ACCESS_KEY_ID = ''
     SMS_ACCESS_KEY_SECRET = ''
@@ -35,7 +35,7 @@ class TestConfig(Config):
     SMTP_PASSWORD = ''
 
 
-class ProdConfig(Config):
+class ProductionConfig(Config):
     SQLALCHEMY_DATABASE_URI = "mysql://root:root@localhost:3306/grimmdb"
     SMS_ACCESS_KEY_ID = ''
     SMS_ACCESS_KEY_SECRET = ''
@@ -45,4 +45,4 @@ class ProdConfig(Config):
     SMTP_PASSWORD = ''
 
 
-configuration = {'dev': DevConfig, 'prod': ProdConfig, 'test': TestConfig}
+configuration = {'dev': DevelopmentConfig, 'prod': ProductionConfig, 'test': TestingConfig}
