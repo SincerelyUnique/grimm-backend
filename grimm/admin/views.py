@@ -22,20 +22,23 @@ class AdminLogin(Resource):
         if not admin_info:
             feedback["message"] = "未注册邮箱"
             logger.warning("%s: no such admin account", info["email"])
+            feedback["status"] = "failure"
+            return jsonify(feedback)
         input_password = info["password"]
         if not bcrypt.checkpw(input_password.encode('utf-8'), admin_info.password):
             feedback["message"] = "密码错误"
-            logger.warning("%d, %s: admin login failed, wrong password", admin_info.id, admin_info.name)
-        if admin_info.email_verified:
-            feedback["id"] = admin_info.id
-            feedback["email"] = admin_info.email
-            feedback["type"] = ("root" if admin_info.id == 0 else "normal")
-            logger.info("%d, %s: admin login successfully", admin_info.id, admin_info.name)
-        else:
-            feedback["message"] = "请先认证邮箱"
-            logger.warning("%d, %s: admin login failed, email not verified", admin_info.id, admin_info.name)
-        if "message" in feedback:
             feedback["status"] = "failure"
+            logger.warning("%d, %s: admin login failed, wrong password", admin_info.id, admin_info.name)
+            return jsonify(feedback)
+        if not admin_info.email_verified:
+            feedback["message"] = "请先认证邮箱"
+            feedback["status"] = "failure"
+            logger.warning("%d, %s: admin login failed, email not verified", admin_info.id, admin_info.name)
+            return jsonify(feedback)
+        feedback["id"] = admin_info.id
+        feedback["email"] = admin_info.email
+        feedback["type"] = ("root" if admin_info.id == 0 else "normal")
+        logger.info("%d, %s: admin login successfully", admin_info.id, admin_info.name)
         return jsonify(feedback)
 
 

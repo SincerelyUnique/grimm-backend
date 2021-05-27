@@ -15,6 +15,8 @@ class Config(object):
 
 class DevConfig(Config):
     SQLALCHEMY_DATABASE_URI = "mysql://root:root@localhost:3306/grimmdb"
+    # SQLALCHEMY_DATABASE_URI = "mysql+cymysql://root:root@localhost:3306/grimmdb"
+    # SQLALCHEMY_DATABASE_URI = "mysql+mysqlconnector://root:root@localhost:3306/grimmdb"
     SMS_ACCESS_KEY_ID = ''
     SMS_ACCESS_KEY_SECRET = ''
     SMTP_ADDRESS = ''

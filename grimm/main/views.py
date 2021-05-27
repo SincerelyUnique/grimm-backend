@@ -1,11 +1,11 @@
 from datetime import datetime
 
 import bcrypt
-from flask import jsonify
-from flask_restx import Resource
+from flask import jsonify, request
+from flask_restx import Resource, fields
 from sqlalchemy import inspect
 
-from grimm import logger, db, engine
+from grimm import logger, db, engine, api
 from grimm.main import main
 from grimm.models.admin import Admin
 from grimm.utils import constants
@@ -18,18 +18,27 @@ class InitDB(Resource):
         if inspect(engine).has_table(Admin.__tablename__):
             return 'Database table already exists.'
         db.create_all()
+        return 'Database table created successfully.'
+
+
+@main.route("/addAdmin")
+class AddAdmin(Resource):
+    @main.doc(params={"email": "input email", 'password': 'input password'})
+    def get(self):
+        email = request.args.get('email') or 'no.reply@rp-i.org'
+        password = request.args.get('password') or 'Cisco123456.'
         admin_info = Admin()
         admin_info.id = 0
         admin_info.registration_date = datetime.now().strftime("%Y-%m-%d")
-        admin_info.email = 'no.reply@rp-i.org'
+        admin_info.email = email
         admin_info.email_verified = 1
         admin_info.name = "root"
         salt = bcrypt.gensalt(constants.DEFAULT_PASSWORD_SALT)
-        bcrypt_password = bcrypt.hashpw('Cisco123456.'.encode('utf-8'), salt)
+        bcrypt_password = bcrypt.hashpw(password.encode('utf-8'), salt)
         admin_info.password = bcrypt_password
         db.session.add(admin_info)
         db.session.commit()
-        return 'Database table created successfully.'
+        return 'Admin add successfully.'
 
 
 @main.route("/tags", methods=['GET'])

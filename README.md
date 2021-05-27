@@ -42,7 +42,7 @@ Copyright (c) 2017-present Grimm
 
 ## Features Usage
 
-### 1.flask_migrate
+### flask_migrate
 
 ```bash
 $ set FLASK_APP=manage.py
@@ -56,3 +56,7 @@ reference doc:
 [Flask-Migrate](https://flask-migrate.readthedocs.io/en/latest/)
 
 [Alembic autogenerate documentation](http://alembic.zzzcomputing.com/en/latest/autogenerate.html#what-does-autogenerate-detect-and-what-does-it-not-detect)
+
+Issues or Attentions:
+
+1.After creating a migration, either manually or as --autogenerate, you must apply it with alembic upgrade head. If you used db.create_all() from a shell, you can use alembic stamp head to indicate that the current state of the database represents the application of all migrations.

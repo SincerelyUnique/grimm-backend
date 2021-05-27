@@ -22,6 +22,8 @@ socketio = SocketIO(cors_allowed_origins='*', debug=True)
 migrate = Migrate()
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(filename)s:%(lineno)d:%(levelname)s:%(message)s")
 logger = logging.getLogger(__name__)
+blueprint = Blueprint('api', __name__)
+api = Api(blueprint)
 
 from grimm.main.views import main
 from grimm.admin.views import admin
@@ -39,10 +41,7 @@ def create_app():
     app.url_map.redirect_defaults = False
     socketio.init_app(app)
 
-    blueprint = Blueprint('api', __name__)
-    api = Api(blueprint)
     app.register_blueprint(blueprint)
-
     api.add_namespace(main)
     api.add_namespace(admin)
     api.add_namespace(activity)
