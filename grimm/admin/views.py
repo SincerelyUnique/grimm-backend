@@ -1,4 +1,6 @@
 import json
+import traceback
+
 import pandas as pd
 from datetime import datetime
 
@@ -16,17 +18,16 @@ from grimm.utils import constants, smsverify, emailverify, dbutils, decrypt
 
 @admin.route('/login', methods=['POST'])
 class AdminLogin(Resource):
-    @admin.doc(
-        "Admin login test",
-        responses={
-            200: ("Logged in", AdminDto.login_success),
-            400: "Validations failed.",
-            403: "Incorrect password or incomplete credentials.",
-            404: "Email does not match any account.",
-            10086: "Email not verified."
-        }
-    )
-    @admin.expect(AdminDto.login, validate=True)
+    # @admin.doc(
+    #     "Admin login test",
+    #     responses={
+    #         200: ("Logged in", AdminDto.login_success),
+    #         403: "Incorrect password or incomplete credentials.",
+    #         404: "Email does not match any account.",
+    #         10086: "Email not verified."
+    #     }
+    # )
+    # @admin.expect(AdminDto.login, validate=True)
     def post(self):
         info = json.loads(request.get_data())
         feedback = {"status": "success"}
@@ -49,7 +50,7 @@ class AdminLogin(Resource):
             return feedback, 10086
         feedback["id"] = admin_info.id
         feedback["email"] = admin_info.email
-        feedback["type"] = ("root" if admin_info.id == 0 else "normal")
+        feedback["type"] = ("root" if admin_info.id == 1 else "normal")
         logger.info("%d, %s: admin login successfully", admin_info.id, admin_info.name)
         return feedback
 
@@ -64,7 +65,7 @@ class GetAdmins(Resource):
         for admin_info in admins_info:
             query = {"id": admin_info.id,
                      "email": admin_info.email,
-                     "type": "root" if admin_info.id == 0 else "normal",
+                     "type": "root" if admin_info.id == 1 else "normal",
                      "name": admin_info.name,
                      "email_verified": admin_info.email_verified}
             queries.append(query)
@@ -81,7 +82,7 @@ class ManageAdmin(Resource):
             return jsonify({"status": "failure", "message": "未知管理员"})
         feedback["id"] = admin_info.id
         feedback["email"] = admin_info.email
-        feedback["type"] = "root" if admin_info.id == 0 else "normal"
+        feedback["type"] = "root" if admin_info.id == 1 else "normal"
         logger.info("%d, %s: query admin info successfully", admin_info.id, admin_info.name)
         return jsonify(feedback)
 
@@ -132,31 +133,32 @@ class NewAdmin(Resource):
             if not email_token.send_email():
                 logger.warning(
                     "%d, %s: send confirm email failed",
-                    admin_info["id"],
-                    admin_info["email"],
+                    admin_info.id,
+                    admin_info.email,
                 )
                 return jsonify(
                     {"status": "failure", "message": "发送验证邮箱失败"}
                 )
         except Exception as err:
+            logger.info(traceback.format_exc())
             logger.warning(
                 "%d, %s: send confirm email failed",
-                admin_info["id"],
-                admin_info["email"],
+                admin_info.id,
+                admin_info.email,
             )
             return jsonify(
                 {"status": "failure", "message": f"{err.args}"}
             )
         logger.info(
             "%d, %s: send confirm email successfully",
-            admin_info["id"],
-            admin_info["email"],
+            admin_info.id,
+            admin_info.email,
         )
         emailverify.append_token(email_token)
         logger.info(
             "%d, %s: create new admin procedure completed successfully",
-            admin_info["id"],
-            admin_info["name"],
+            admin_info.id,
+            admin_info.name,
         )
         return jsonify({"status": "success"})
 

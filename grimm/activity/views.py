@@ -6,7 +6,7 @@ from flask_restx import Resource
 
 from grimm import logger, db
 from grimm.activity import activity, activitybiz
-from grimm.models.activity import Activity, RegisteredActivity, ActivityParticipant
+from grimm.models.activity import Activity, RegisteredActivity, ActivityParticipant, PickupVolunteer, PickupImpaired
 from grimm.models.admin import User
 from grimm.utils import dbutils, certificationgenerate, emailverify
 from grimm.utils.constants import TAG_LIST
@@ -163,7 +163,7 @@ class ActivityRegistration(Resource):
 
 
 @activity.route("/activityParticipant", methods=["GET", 'POST'])
-class ActivityParticipant(Resource):
+class ActivityParticipant_(Resource):
     def get(self):
         participant_openid = request.args.get("participant_openid")
         activity_participant_infos = ActivityParticipant.query.all()
@@ -335,6 +335,32 @@ class GetActivity(Resource):
             return jsonify({"status": "failure", "message": "未知活动ID"})
         feedback = activitybiz.activity_converter(dbutils.serialize(activity_info), openid)
         feedback["status"] = "success"
+
+        user_info = User.query.filter(User.openid == openid).first()
+        if not user_info:
+            return jsonify({"status": "failure", "message": "请先注册"})
+        if user_info.role == 0:
+            pickup_volunteer = db.session.query(PickupVolunteer).\
+                filter(PickupVolunteer.openid == openid, PickupVolunteer.activity_id == activity_id).first()
+            if pickup_volunteer:
+                feedback['role'] = user_info.role
+                feedback['needPickup'] = 1
+                feedback['status'] = 'success'
+                return jsonify(feedback)
+        else:
+            pickup_impaired = db.session.query(PickupImpaired).\
+                filter(PickupImpaired.openid == openid, PickupImpaired.activity_id == activity_id).first()
+            if pickup_impaired:
+                feedback['role'] = user_info.role
+                feedback['needPickup'] = 1
+                feedback['name'] = pickup_impaired.name
+                feedback['idNo'] = pickup_impaired.id_no
+                feedback['impairedNo'] = pickup_impaired.impaired_no
+                feedback['pickupAddr'] = pickup_impaired.pickup_addr
+                feedback['emergencyContact'] = pickup_impaired.emergency_contact
+                feedback['status'] = 'success'
+                return jsonify(feedback)
+        feedback['needPickup'] = 0
         logger.info("%d: get activity successfully", activity_id)
         return jsonify(feedback)
 
@@ -503,8 +529,23 @@ class RegisteredActivities(Resource):
     def delete(self):
         """ cancel specific registered activity """
         openid = request.headers.get("Authorization")
-        print("*****************deleteopenid", type(openid), openid)
         activity_id = request.args.get("activityId")
+        logger.info('Delete openid - %s, activity id - %s' % (openid, activity_id))
+        user_info = User.query.filter(User.openid == openid).first()
+
+        if user_info.role == 0:
+            pickup_volunteer = db.session.query(PickupVolunteer).\
+                filter(PickupVolunteer.openid == openid, PickupVolunteer.activity_id == activity_id).first()
+            if pickup_volunteer:
+                db.session.delete(pickup_volunteer)
+                db.session.commit()
+        else:
+            pickup_impaired = db.session.query(PickupImpaired).\
+                filter(PickupImpaired.openid == openid, PickupImpaired.activity_id == activity_id).first()
+            if pickup_impaired:
+                db.session.delete(pickup_impaired)
+                db.session.commit()
+
         delete_info = db.session.query(RegisteredActivity).\
             filter(RegisteredActivity.user_openid == openid,
                    RegisteredActivity.activity_id == activity_id).first()
@@ -513,3 +554,65 @@ class RegisteredActivities(Resource):
             db.session.commit()
             return jsonify({"status": "取消活动成功！"})
         return jsonify({"status": "取消活动失败！"})
+
+
+@activity.route("/pickUpImpaired", methods=["POST"])
+class PickUpImpaired(Resource):
+    def post(self):
+        openid = request.headers.get('Authorization')
+        data = request.get_json()
+        activity_id = data['activityId']
+        RegisteredActivity.query.\
+            filter(RegisteredActivity.user_openid == openid,
+                   RegisteredActivity.activity_id == activity_id).update({RegisteredActivity.needpickup: 1})
+        pickup_info = db.session.query(PickupImpaired).\
+            filter(PickupImpaired.openid == openid, PickupImpaired.activity_id == activity_id).first()
+        if pickup_info:
+            pickup_info.name = data['name']
+            pickup_info.id_no = data['idNo']
+            pickup_info.impaired_no = data['impairedNo']
+            pickup_info.pickup_addr = data['pickupAddr']
+            pickup_info.emergency_contact = data['emergencyContact']
+            db.session.commit()
+            return jsonify({'status': 'success', 'message': '更新成功'})
+        new_pickup_info = PickupImpaired()
+        new_pickup_info.openid = openid
+        new_pickup_info.activity_id = activity_id
+        new_pickup_info.name = data['name']
+        new_pickup_info.id_no = data['idNo']
+        new_pickup_info.impaired_no = data['impairedNo']
+        new_pickup_info.pickup_addr = data['pickupAddr']
+        new_pickup_info.emergency_contact = data['emergencyContact']
+        db.session.add(new_pickup_info)
+        db.session.commit()
+        return jsonify({'status': 'success', 'message': '提交成功'})
+
+
+@activity.route("/pickUpVolunteer", methods=["POST"])
+class PickUpVolunteer(Resource):
+    def post(self):
+        openid = request.headers.get('Authorization')
+        data = request.get_json()
+        activity_id = data['activityId']
+        RegisteredActivity.query. \
+            filter(RegisteredActivity.user_openid == openid,
+                   RegisteredActivity.activity_id == activity_id).update({RegisteredActivity.needpickup: 1})
+        pickup_info = db.session.query(PickupVolunteer). \
+            filter(PickupVolunteer.openid == openid, PickupVolunteer.activity_id == activity_id).first()
+        if pickup_info:
+            pickup_info.name = data['name']
+            pickup_info.id_no = data['idNo']
+            pickup_info.pickup_addr = data['pickupAddr']
+            pickup_info.provide_service = data['provideService']
+            db.session.commit()
+            return jsonify({'status': 'success', 'message': '更新成功'})
+        new_pickup_info = PickupVolunteer()
+        new_pickup_info.openid = openid
+        new_pickup_info.activity_id = activity_id
+        new_pickup_info.name = data['name']
+        new_pickup_info.id_no = data['idNo']
+        new_pickup_info.pickup_addr = data['pickupAddr']
+        new_pickup_info.provide_service = data['provideService']
+        db.session.add(new_pickup_info)
+        db.session.commit()
+        return jsonify({'status': 'success', 'message': '提交成功'})

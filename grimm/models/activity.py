@@ -55,3 +55,24 @@ class ActivityParticipant(db.Model):
     certificated = db.Column(db.Integer)
     certiticate_date = db.Column(db.DateTime)
     paper_certificate = db.Column(db.Integer)
+
+
+class PickupImpaired(db.Model):
+    __tablename__ = 'PICKUP_IMPAIRED'
+    openid = db.Column(db.String(64), primary_key=True)
+    activity_id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(32))
+    id_no = db.Column(db.String(18))
+    impaired_no = db.Column(db.String(20))
+    pickup_addr = db.Column(db.String(256))
+    emergency_contact = db.Column(db.String(32))
+
+
+class PickupVolunteer(db.Model):
+    __tablename__ = 'PICKUP_VOLUNTEER'
+    openid = db.Column(db.String(64), primary_key=True)
+    activity_id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(32))
+    id_no = db.Column(db.String(18))
+    pickup_addr = db.Column(db.String(512))
+    provide_service = db.Column(db.String(32))

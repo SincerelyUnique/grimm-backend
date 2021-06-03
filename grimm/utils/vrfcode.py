@@ -18,7 +18,6 @@
 #   1. 2019/09/19, Ming, create first revision.
 #
 
-import re
 import uuid
 import time
 import random
@@ -27,9 +26,8 @@ import string
 from itsdangerous import URLSafeTimedSerializer
 
 from grimm import logger
-import grimm
+from grimm import GrimmConfig
 from grimm.utils.misctools import get_host_ip, is_ipv4_addr
-
 from grimm.utils.constants import HOST, PORT
 from grimm.utils.constants import DEFAULT_SERIAL_NO_BYTES, DEFAULT_VRFCODE_BYTES, DEFAULT_PROTOCOL
 
@@ -81,8 +79,8 @@ def check_vrfcode_expiry(code, limit=600):
 
 def new_vrfurl(email):
     '''generate new confirm verification email url'''
-    serializer = URLSafeTimedSerializer(grimm.config['SECRET_KEY'])
-    token = serializer.dumps(email, salt=grimm.config['SECURITY_PASSWORD_SALT'])
+    serializer = URLSafeTimedSerializer(GrimmConfig.SECRET_KEY)
+    token = serializer.dumps(email, salt=GrimmConfig.SECURITY_PASSWORD_SALT)
     server_port = PORT
     server_host = get_host_ip() if is_ipv4_addr(HOST) or HOST == 'localhost' else HOST
 
@@ -92,11 +90,11 @@ def new_vrfurl(email):
 
 def parse_vrftoken(token):
     '''confirm email token with certain expiration time'''
-    serializer = URLSafeTimedSerializer(grimm.config['SECRET_KEY'])
+    serializer = URLSafeTimedSerializer(GrimmConfig.SECRET_KEY)
     try:
         addr = serializer.loads(
             token,
-            salt=grimm.config['SECURITY_PASSWORD_SALT'])
+            salt=GrimmConfig.SECURITY_PASSWORD_SALT)
     except:
         return None
     return addr
