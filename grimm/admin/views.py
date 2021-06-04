@@ -58,7 +58,7 @@ class AdminLogin(Resource):
 @admin.route('/admins', methods=['GET'])
 class GetAdmins(Resource):
     def get(self):
-        """view function to display all admins profile"""
+        """view function to xxxdisplay all admins profile"""
         admins_info = Admin.query.all()
         queries = []
         logger.info("query all admin info successfully")
