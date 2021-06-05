@@ -19,7 +19,7 @@ class WXJSCode2Session(Resource):
             return jsonify({"status": "failure"})
         prefix = "https://api.weixin.qq.com/sns/jscode2session?appid="
         suffix = "&grant_type=authorization_code"
-        url = prefix + GrimmConfig.WXAppID + "&secret=" + GrimmConfig.WXAppSecret + "&js_code=" + js_code + suffix
+        url = prefix + GrimmConfig.WX_APP_ID + "&secret=" + GrimmConfig.WX_APP_SECRET + "&js_code=" + js_code + suffix
         logger.info("user login, wxapp authorization: %s", url)
         retry, feedback = 3, {}
         while retry > 0:

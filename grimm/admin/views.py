@@ -18,16 +18,16 @@ from grimm.utils import constants, smsverify, emailverify, dbutils, decrypt
 
 @admin.route('/login', methods=['POST'])
 class AdminLogin(Resource):
-    # @admin.doc(
-    #     "Admin login test",
-    #     responses={
-    #         200: ("Logged in", AdminDto.login_success),
-    #         403: "Incorrect password or incomplete credentials.",
-    #         404: "Email does not match any account.",
-    #         10086: "Email not verified."
-    #     }
-    # )
-    # @admin.expect(AdminDto.login, validate=True)
+    @admin.doc(
+        "Admin login test",
+        responses={
+            200: ("Logged in", AdminDto.login_success),
+            403: "Incorrect password or incomplete credentials.",
+            404: "Email does not match any account.",
+            10086: "Email not verified."
+        }
+    )
+    @admin.expect(AdminDto.login, validate=False)
     def post(self):
         info = json.loads(request.get_data())
         feedback = {"status": "success"}
@@ -58,7 +58,7 @@ class AdminLogin(Resource):
 @admin.route('/admins', methods=['GET'])
 class GetAdmins(Resource):
     def get(self):
-        """view function to xxxdisplay all admins profile"""
+        """view function to display all admins profile"""
         admins_info = Admin.query.all()
         queries = []
         logger.info("query all admin info successfully")
@@ -366,7 +366,7 @@ class GetPhoneNumber(Resource):
             return jsonify({"status": "failure"})
         prefix = "https://api.weixin.qq.com/sns/jscode2session?appid="
         suffix = "&grant_type=authorization_code"
-        url = prefix + GrimmConfig.WXAppID + "&secret=" + GrimmConfig.WXAppSecret + "&js_code=" + js_code + suffix
+        url = prefix + GrimmConfig.WX_APP_ID + "&secret=" + GrimmConfig.WX_APP_SECRET + "&js_code=" + js_code + suffix
         logger.info("user login, wxapp authorization: %s", url)
         retry = 3
         while retry > 0:
@@ -383,7 +383,7 @@ class GetPhoneNumber(Resource):
             if "session_key" in feedback:
                 sessionKey = feedback["session_key"]
 
-                phone_decrypt = decrypt.PhoneNumberDecrypt(GrimmConfig.WXAppID, sessionKey)
+                phone_decrypt = decrypt.PhoneNumberDecrypt(GrimmConfig.WX_APP_ID, sessionKey)
                 decryptData = phone_decrypt.decrypt(encrypted_data, iv)
                 print(decryptData)
                 feedback["decrypt_data"] = decryptData

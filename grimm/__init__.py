@@ -10,12 +10,11 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from sqlalchemy.engine import create_engine
 
-from config import configuration
+from config import GrimmConfig
 
 
 compress = Compress()
 db = SQLAlchemy()
-GrimmConfig = configuration['dev']
 engine = create_engine(GrimmConfig.SQLALCHEMY_DATABASE_URI)
 TOP_DIR = os.path.dirname(__file__) or "."
 socketio = SocketIO(cors_allowed_origins='*', debug=True)
