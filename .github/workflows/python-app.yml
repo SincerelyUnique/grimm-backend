@@ -37,11 +37,11 @@ jobs:
     - name: CD
       uses: appleboy/ssh-action@master
       with:   # below ref: https://github.com/marketplace/actions/ssh-remote-commands
-        host: ${{ secrets.HOST }}
-        USERNAME: ${{ secrets.USERNAME }}
-        KEY: ${{ secrets.SSHKEY }}
+        host: ${{ secrets.JALEN_HOST }}
+        USERNAME: ${{ secrets.JALEN_USERNAME }}
+        KEY: ${{ secrets.JALEN_SSHKEY }}
         command_timeout: 5m
-        PORT: ${{ secrets.PORT }}
+        PORT: ${{ secrets.JALEN_PORT }}
         script: |
           cd /usr/local/app/grimm-backend
           echo 'source code'
