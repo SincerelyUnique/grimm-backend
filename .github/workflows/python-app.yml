@@ -34,7 +34,7 @@ jobs:
 #    - name: Test with pytest
 #      run: |
 #        pytest
-    - name: CD
+    - name: CD(Jalen VPS)
       uses: appleboy/ssh-action@master
       with:   # below ref: https://github.com/marketplace/actions/ssh-remote-commands
         host: ${{ secrets.JALEN_HOST }}
@@ -50,5 +50,23 @@ jobs:
           pip install -r requirements.txt
           pid=$(cat /usr/local/app/grimm-backend/logs/grimm.pid)
           echo "$pid"
-          kill -9 $pid
+          nohup kill -9 $pid 2>/dev/null
+          nohup ./run_grimm.sh >> grimm.out 2>&1 &
+    - name: CD(Internal public backend server)
+      uses: appleboy/ssh-action@master
+      with:   # below ref: https://github.com/marketplace/actions/ssh-remote-commands
+        host: ${{ secrets.JALEN_HOST }}
+        USERNAME: ${{ secrets.JALEN_USERNAME }}
+        KEY: ${{ secrets.JALEN_SSHKEY }}
+        command_timeout: 5m
+        PORT: ${{ secrets.JALEN_PORT }}
+        script: |
+          /home/grimm/grimm-dev/grimm-backend
+          git pull git@github.com:SincerelyUnique/grimm-backend.git
+          conda activate py36grimm2
+          pip install -r requirements.txt
+          pid=$(cat cat /home/grimm/grimm-dev/grimm-backend/logs/grimm.pid)
+          echo "$pid"
+          nohup kill -9 $pid 2>/dev/null
+          chmod -R 777 run_grimm.sh
           nohup ./run_grimm.sh >> grimm.out 2>&1 &
