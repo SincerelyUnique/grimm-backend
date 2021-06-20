@@ -45,6 +45,7 @@ jobs:
         script: |
           cd /usr/local/app/grimm-backend
           echo 'source code'
+          git checkout HEAD run_grimm.sh
           git pull git@github.com:SincerelyUnique/grimm-backend.git
           source ../venv/bin/activate
           pip install -r requirements.txt
@@ -55,13 +56,14 @@ jobs:
     - name: CD(Internal public backend server)
       uses: appleboy/ssh-action@master
       with:   # below ref: https://github.com/marketplace/actions/ssh-remote-commands
-        host: ${{ secrets.JALEN_HOST }}
-        USERNAME: ${{ secrets.JALEN_USERNAME }}
-        KEY: ${{ secrets.JALEN_SSHKEY }}
+        host: ${{ secrets.DEV_HOST }}
+        USERNAME: ${{ secrets.DEV_USERNAME }}
+        KEY: ${{ secrets.DEV_SSHKEY }}
         command_timeout: 5m
-        PORT: ${{ secrets.JALEN_PORT }}
+        PORT: ${{ secrets.DEV_PORT }}
         script: |
           /home/grimm/grimm-dev/grimm-backend
+          git checkout HEAD run_grimm.sh
           git pull git@github.com:SincerelyUnique/grimm-backend.git
           conda activate py36grimm2
           pip install -r requirements.txt
