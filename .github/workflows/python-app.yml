@@ -74,22 +74,41 @@ jobs:
 #          nohup kill -9 $pid 2>/dev/null
 #          chmod -R 777 run_grimm.sh
 #          nohup ./run_grimm.sh >> grimm.out 2>&1 &
-    - name: CD(Test env - aliyun)
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ secrets.TEST_HOST }}
-        USERNAME: ${{ secrets.TEST_USERNAME }}
-        KEY: ${{ secrets.TEST_SSHKEY }}
-        command_timeout: 5m
-        PORT: ${{ secrets.TEST_PORT }}
-        script: |
-          cd /home/grimm/app/grimm/backend/grimm-backend
-          git checkout HEAD run_grimm.sh
-          git pull git@github.com:SincerelyUnique/grimm-backend.git
-          source ../venv/bin/activate
-          pip install -r requirements.txt
-          pid=$(cat cat /home/grimm/app/grimm/backend/grimm-backend/logs/grimm.pid)
-          echo "$pid"
-          nohup kill -9 $pid 2>/dev/null
-          chmod -R 777 run_grimm.sh
-          nohup ./run_grimm.sh >> grimm.out 2>&1 &
+#    - name: CD(Test env - aliyun)
+#      uses: appleboy/ssh-action@master
+#      with:
+#        host: ${{ secrets.TEST_HOST }}
+#        USERNAME: ${{ secrets.TEST_USERNAME }}
+#        KEY: ${{ secrets.TEST_SSHKEY }}
+#        command_timeout: 5m
+#        PORT: ${{ secrets.TEST_PORT }}
+#        script: |
+#          cd /home/grimm/app/grimm/backend/grimm-backend
+#          git checkout HEAD run_grimm.sh
+#          git pull git@github.com:SincerelyUnique/grimm-backend.git
+#          source ../venv/bin/activate
+#          pip install -r requirements.txt
+#          pid=$(cat cat /home/grimm/app/grimm/backend/grimm-backend/logs/grimm.pid)
+#          echo "$pid"
+#          nohup kill -9 $pid 2>/dev/null
+#          chmod -R 777 run_grimm.sh
+#          nohup ./run_grimm.sh >> grimm.out 2>&1 &
+#    - name: CD(Prod env - tencentyun)
+#      uses: appleboy/ssh-action@master
+#      with:
+#        host: ${{ secrets.PROD_HOST }}
+#        USERNAME: ${{ secrets.PROD_USERNAME }}
+#        KEY: ${{ secrets.PROD_SSHKEY }}
+#        command_timeout: 10m
+#        PORT: ${{ secrets.PROD_PORT }}
+#        script: |
+#          cd /home/grimm/app/grimm/backend/grimm-backend
+#          git checkout HEAD run_grimm.sh
+#          git pull git@github.com:SincerelyUnique/grimm-backend.git
+#          conda activate venv
+#          while read requirement; do conda install --yes $requirement || pip install $requirement; done < requirements.txt
+#          pid=$(cat cat /home/grimm/app/grimm/backend/grimm-backend/logs/grimm.pid)
+#          echo "$pid"
+#          nohup kill -9 $pid 2>/dev/null
+#          chmod -R 777 run_grimm.sh
+#          nohup ./run_grimm.sh >> grimm.out 2>&1 &
