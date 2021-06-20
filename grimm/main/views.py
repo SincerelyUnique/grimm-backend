@@ -46,6 +46,6 @@ class TagsDB(Resource):
     def get(self):
         """view function to get all tags info"""
         tag_list = [{'tag_id': i, 'tag_name': constants.TAG_LIST[i]} for i in range(len(constants.TAG_LIST))]
-        tag_list.append({'tag_id': 100, 'tag_name': 'aaaaaa'})
+        tag_list.append({'tag_id': 100, 'tag_name': 'aaaaaabb'})
         logger.info("query all tags info successfully")
         return jsonify(tag_list)
