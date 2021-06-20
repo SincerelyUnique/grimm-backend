@@ -55,21 +55,40 @@ jobs:
           nohup kill -9 $pid 2>/dev/null
           chmod -R 777 run_grimm.sh
           nohup ./run_grimm.sh >> grimm.out 2>&1 &
-    - name: CD(Internal public backend server)
+#    - name: CD(Dev env - cisco internal)
+#      uses: appleboy/ssh-action@master
+#      with:
+#        host: ${{ secrets.DEV_HOST }}
+#        USERNAME: ${{ secrets.DEV_USERNAME }}
+#        KEY: ${{ secrets.DEV_SSHKEY }}
+#        command_timeout: 5m
+#        PORT: ${{ secrets.DEV_PORT }}
+#        script: |
+#          cd /home/grimm/grimm-dev/grimm-backend
+#          git checkout HEAD run_grimm.sh
+#          git pull git@github.com:SincerelyUnique/grimm-backend.git
+#          conda activate py36grimm2
+#          pip install -r requirements.txt
+#          pid=$(cat cat /home/grimm/grimm-dev/grimm-backend/logs/grimm.pid)
+#          echo "$pid"
+#          nohup kill -9 $pid 2>/dev/null
+#          chmod -R 777 run_grimm.sh
+#          nohup ./run_grimm.sh >> grimm.out 2>&1 &
+    - name: CD(Test env - aliyun)
       uses: appleboy/ssh-action@master
       with:
-        host: ${{ secrets.DEV_HOST }}
-        USERNAME: ${{ secrets.DEV_USERNAME }}
-        KEY: ${{ secrets.DEV_SSHKEY }}
+        host: ${{ secrets.TEST_HOST }}
+        USERNAME: ${{ secrets.TEST_USERNAME }}
+        KEY: ${{ secrets.TEST_SSHKEY }}
         command_timeout: 5m
-        PORT: ${{ secrets.DEV_PORT }}
+        PORT: ${{ secrets.TEST_PORT }}
         script: |
-          /home/grimm/grimm-dev/grimm-backend
+          cd /home/grimm/app/grimm/backend/grimm-backend
           git checkout HEAD run_grimm.sh
           git pull git@github.com:SincerelyUnique/grimm-backend.git
-          conda activate py36grimm2
+          source ../venv/bin/activate
           pip install -r requirements.txt
-          pid=$(cat cat /home/grimm/grimm-dev/grimm-backend/logs/grimm.pid)
+          pid=$(cat cat /home/grimm/app/grimm/backend/grimm-backend/logs/grimm.pid)
           echo "$pid"
           nohup kill -9 $pid 2>/dev/null
           chmod -R 777 run_grimm.sh
