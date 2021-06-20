@@ -1,5 +1,6 @@
 # This workflow will install Python dependencies, run tests and lint with a single version of Python
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+# https://github.com/marketplace/actions/ssh-remote-commands
 
 name: Python application
 
@@ -36,7 +37,7 @@ jobs:
 #        pytest
     - name: CD(Jalen VPS)
       uses: appleboy/ssh-action@master
-      with:   # below ref: https://github.com/marketplace/actions/ssh-remote-commands
+      with:
         host: ${{ secrets.JALEN_HOST }}
         USERNAME: ${{ secrets.JALEN_USERNAME }}
         KEY: ${{ secrets.JALEN_SSHKEY }}
@@ -52,10 +53,11 @@ jobs:
           pid=$(cat /usr/local/app/grimm-backend/logs/grimm.pid)
           echo "$pid"
           nohup kill -9 $pid 2>/dev/null
+          chmod -R 777 run_grimm.sh
           nohup ./run_grimm.sh >> grimm.out 2>&1 &
     - name: CD(Internal public backend server)
       uses: appleboy/ssh-action@master
-      with:   # below ref: https://github.com/marketplace/actions/ssh-remote-commands
+      with:
         host: ${{ secrets.DEV_HOST }}
         USERNAME: ${{ secrets.DEV_USERNAME }}
         KEY: ${{ secrets.DEV_SSHKEY }}
