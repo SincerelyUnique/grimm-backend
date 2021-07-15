@@ -44,13 +44,12 @@ jobs:
         command_timeout: 5m
         PORT: ${{ secrets.JALEN_PORT }}
         script: |
-          cd /usr/local/app/grimm-backend
-          echo 'source code'
+          cd backend_v2/grimm-backend
           git checkout HEAD run_grimm.sh
           git pull git@github.com:SincerelyUnique/grimm-backend.git
-          source ../venv/bin/activate
-          pip install -r requirements.txt
-          pid=$(cat /usr/local/app/grimm-backend/logs/grimm.pid)
+          conda activate venv
+          PYTHONPATH=/home/grimm/anaconda3/envs/venv/lib/python3.8/site-packages pip install -t /home/grimm/anaconda3/envs/venv/lib/python3.8/site-packages -r requirements.txt
+          pid=$(cat logs/grimm.pid)
           echo "$pid"
           nohup kill -9 $pid 2>/dev/null
           chmod -R 777 run_grimm.sh
