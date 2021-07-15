@@ -47,7 +47,7 @@ jobs:
           cd backend_v2/grimm-backend
           git checkout HEAD run_grimm.sh
           git pull git@github.com:SincerelyUnique/grimm-backend.git
-          /home/grimm/anaconda3/bin/conda activate venv
+          conda activate venv
           PYTHONPATH=/home/grimm/anaconda3/envs/venv/lib/python3.8/site-packages pip install -t /home/grimm/anaconda3/envs/venv/lib/python3.8/site-packages -r requirements.txt
           pid=$(cat logs/grimm.pid)
           echo "$pid"
