@@ -7,7 +7,6 @@ from grimm.utils import misctools, constants
 
 
 def activity_converter(activity, openid=0):
-    ds = 'sd'
     query = {}
     logger.info('Convert activity dto.')
     query["id"] = activity["id"]
