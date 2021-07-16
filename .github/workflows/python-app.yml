@@ -34,7 +34,7 @@ jobs:
 #        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 #    - name: Test with pytest
 #      run: |
-#        pytest111222333
+#        pytest111222333444
     - name: CD(Jalen VPS)
       uses: appleboy/ssh-action@master
       with:
@@ -44,11 +44,11 @@ jobs:
         command_timeout: 5m
         PORT: ${{ secrets.JALEN_PORT }}
         script: |
-          cd backend_v2/grimm-backend
+          cd /opt/backend/test/grimm-backend
           git checkout HEAD run_grimm.sh
           git pull git@github.com:SincerelyUnique/grimm-backend.git
-          conda activate venv
-          PYTHONPATH=/home/grimm/anaconda3/envs/venv/lib/python3.8/site-packages pip install -t /home/grimm/anaconda3/envs/venv/lib/python3.8/site-packages -r requirements.txt
+          source ../venv/bin/activate
+          pip install -r requirements.txt
           pid=$(cat logs/grimm.pid)
           echo "$pid"
           nohup kill -9 $pid 2>/dev/null
