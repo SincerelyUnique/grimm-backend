@@ -34,15 +34,15 @@ jobs:
 #        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 #    - name: Test with pytest
 #      run: |
-#        pytest11122233344455566677788899911
+#        pytest1
     - name: CD(Jalen VPS)
       uses: appleboy/ssh-action@master
       with:
-        host: ${{ secrets.JALEN_HOST }}
-        USERNAME: ${{ secrets.JALEN_USERNAME }}
-        KEY: ${{ secrets.JALEN_SSHKEY }}
-        command_timeout: 5m
-        PORT: ${{ secrets.JALEN_PORT }}
+        host: ${{ secrets.HOST }}
+        USERNAME: ${{ secrets.USERNAME }}
+        KEY: ${{ secrets.SSHKEY }}
+        command_timeout: 10m
+        PORT: ${{ secrets.PORT }}
         script: |
           cd /opt/backend/test/grimm-backend
           git checkout HEAD run_grimm.sh
